@@ -22,7 +22,7 @@ Structure TSpaceShip Extends TRect
 EndStructure
 
 Global Event, ElapsedTimneInS.f, LastTimeInMs, Time.f = 0
-Global Camera.TCamera, SpaceShip.TSpaceShip
+Global Camera.TCamera, SpaceShip.TSpaceShip, CameraFrame.TRect
 
 
 
@@ -34,8 +34,10 @@ EndProcedure
 
 Procedure UpdateCamera()
   ;camera code, camera is position is based on the sapceshipt position
-  Camera\x = (SpaceShip\x + SpaceShip\w / 2) - Camera\w / 2
-  Camera\y = (SpaceShip\y + SpaceShip\h / 2) - Camera\h / 2
+  ;Camera\x = (SpaceShip\x + SpaceShip\w / 2) - Camera\w / 2
+  ;Camera\y = (SpaceShip\y + SpaceShip\h / 2) - Camera\h / 2
+  Camera\x = (CameraFrame\x + CameraFrame\w / 2) - Camera\w / 2
+  Camera\y = (CameraFrame\y + CameraFrame\h / 2) - Camera\h / 2
 EndProcedure
 
 
@@ -51,6 +53,13 @@ Procedure StartGame()
   
   Camera\w = ScreenWidth()
   Camera\h = ScreenHeight()
+  
+  
+  CameraFrame\w = ScreenWidth() / 3
+  CameraFrame\h = ScreenHeight() / 3
+  CameraFrame\x = ScreenWidth() / 2 - (CameraFrame\w / 2)
+  CameraFrame\y = ScreenHeight() / 2 - (CameraFrame\h / 2)
+  
   UpdateCamera()
   
   
@@ -78,9 +87,46 @@ Procedure UpdateShip(Elapsed.f)
   
 EndProcedure
 
+Procedure.f Clamp(Value.f, Low.f, High.f)
+  If Value < Low
+    ProcedureReturn Low
+  ElseIf Value > High
+    ProcedureReturn High
+  EndIf
+  
+  ProcedureReturn Value
+  
+EndProcedure
+
+
+Procedure UpdateCameraFrame(Elapsed.f)
+  Protected SpaceShipMiddleX.f = SpaceShip\x + SpaceShip\w / 2
+  If SpaceShipMiddleX < CameraFrame\x
+    CameraFrame\x = SpaceShipMiddleX
+  EndIf
+  
+  If SpaceShipMiddleX > CameraFrame\x + CameraFrame\w
+    CameraFrame\x = SpaceShipMiddleX - CameraFrame\w
+  EndIf
+  
+  Protected SpaceShipMiddleY.f = SpaceShip\y + SpaceShip\h / 2
+  If SpaceShipMiddleY < CameraFrame\y
+    CameraFrame\y = SpaceShipMiddleY
+  EndIf
+  
+  If SpaceShipMiddleY > CameraFrame\y + CameraFrame\h
+    CameraFrame\y = SpaceShipMiddleY - CameraFrame\h
+  EndIf
+  
+  
+  ;CameraFrame\x = Clamp(CameraFrame\x, SpaceShipMiddleX, 
+EndProcedure
+
+
 
 Procedure UpdateGame(Elapsed.f)
   UpdateShip(Elapsed)
+  UpdateCameraFrame(Elapsed)
   UpdateCamera()
 EndProcedure
 
@@ -117,12 +163,20 @@ Procedure DrawBackground()
   
 EndProcedure
 
+Procedure DrawCameraFrame()
+  StartDrawing(ScreenOutput())
+  DrawingMode(#PB_2DDrawing_Outlined)
+  Box(CameraFrame\x - Camera\x, CameraFrame\y - Camera\y, CameraFrame\w, CameraFrame\h, #Red)
+  StopDrawing()
+EndProcedure
+
 
 
 Procedure Draw()
   DrawBackground()
   ;draw space ship
   DrawSpaceShip()
+  DrawCameraFrame()
 EndProcedure
 
 If InitSprite() = 0 Or InitKeyboard() = 0
